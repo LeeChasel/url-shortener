@@ -11,4 +11,16 @@ export class ConfigService {
   get<K extends keyof ConfigSchema>(key: K): ConfigSchema[K] {
     return this.configService.get(key)!;
   }
+
+  isDevelopment(): boolean {
+    return this.get('NODE_ENV') === 'development';
+  }
+
+  isStaging(): boolean {
+    return this.get('NODE_ENV') === 'staging';
+  }
+
+  isProduction(): boolean {
+    return this.get('NODE_ENV') === 'production';
+  }
 }

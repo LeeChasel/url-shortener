@@ -2,6 +2,7 @@
 export * from './modules/config/config.module';
 export * from './modules/prisma/prisma.module';
 export * from './modules/cache/cache.module';
+export * from './modules/logger/logger.module';
 
 // services
 export * from './modules/config/config.service';

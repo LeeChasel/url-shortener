@@ -4,6 +4,9 @@ const DEFAULT_APP_PORT = 3000;
 const DEFAULT_REDIS_PORT = 6379;
 
 const configSchema = z.object({
+  NODE_ENV: z
+    .enum(['development', 'staging', 'production'])
+    .default('development'),
   APP_PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_APP_PORT),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z

@@ -12,7 +12,6 @@ import configuration from './configuration';
       expandVariables: true,
     }),
   ],
-  controllers: [],
   providers: [ConfigService],
   exports: [ConfigService],
 })
