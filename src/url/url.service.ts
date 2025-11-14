@@ -6,15 +6,17 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from 'src/libs';
+import { ConfigService, PrismaService } from 'src/libs';
 import { nanoid } from 'nanoid';
 import { addHours } from 'date-fns';
 import { Prisma } from 'generated/prisma';
+import { UrlResponseDto } from './dto';
 
 @Injectable()
 export class UrlService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
   private readonly logger = new Logger(UrlService.name);
@@ -23,7 +25,7 @@ export class UrlService {
   async createShortUrl(
     originalUrl: string,
     expiryInHours = this.DEFAULT_EXPIRY_HOURS,
-  ): Promise<string> {
+  ): Promise<UrlResponseDto> {
     const shortCode = await this.generateUniqueShortCode();
     const expiryDate = addHours(new Date(), expiryInHours);
 
@@ -40,7 +42,14 @@ export class UrlService {
       ]);
       this.logger.log(`Created short code: ${shortCode} for ${originalUrl}`);
 
-      return url.shortCode;
+      return new UrlResponseDto({
+        shortCode: url.shortCode,
+        shortUrl: this.generateShortUrl(url.shortCode),
+        originalUrl: url.originalUrl,
+        expiresAt: url.expiresAt!,
+        createdAt: url.createdAt,
+        updatedAt: url.updatedAt,
+      });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -96,5 +105,9 @@ export class UrlService {
     } catch (error) {
       this.logger.warn({ error, shortCode }, 'Failed to write URL to cache');
     }
+  }
+
+  private generateShortUrl(shortCode: string): string {
+    return `${this.config.get('BASE_URL')}/${shortCode}`;
   }
 }

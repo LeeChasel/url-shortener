@@ -8,6 +8,7 @@ const configSchema = z.object({
     .enum(['development', 'staging', 'production'])
     .default('development'),
   APP_PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_APP_PORT),
+  BASE_URL: z.url().default(`http://localhost:${DEFAULT_APP_PORT}`),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z
     .string()

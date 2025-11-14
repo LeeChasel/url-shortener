@@ -2,10 +2,10 @@ import { IsInt, IsOptional, IsUrl, Min } from 'class-validator';
 
 export class CreateUrlDto {
   @IsUrl()
-  readonly url!: string;
+  declare readonly url: string;
 
   @IsInt()
   @Min(1)
   @IsOptional()
-  readonly expiryInHours?: number;
+  declare readonly expiryInHours?: number;
 }
