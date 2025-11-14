@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CacheModule, ConfigModule, PrismaModule, LoggerModule } from './libs';
+import { UrlModule } from './url/url.module';
 
 @Module({
   imports: [
@@ -8,6 +9,9 @@ import { CacheModule, ConfigModule, PrismaModule, LoggerModule } from './libs';
     PrismaModule,
     CacheModule,
     LoggerModule,
+
+    // features
+    UrlModule,
   ],
   controllers: [],
   providers: [],
