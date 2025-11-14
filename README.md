@@ -1,12 +1,26 @@
 # URL shortner
 
 ## TODO
+
 - [ ] url shortener module
 - [ ] short url redirect module
 - [ ] og-scraper
 
-
 ## Project setup
+
+1. Setup environment variables.
+   Make a copy of [.env.example](./.env.example) and rename it to `.env`.
+
+```bash
+# .env
+APP_PORT=
+BASE_URL=
+DATABASE_URL=
+REDIS_URL=
+NODE_ENV=
+```
+
+2. Install dependencies (this will also generate the Prisma Client):
 
 ```bash
 $ pnpm install
