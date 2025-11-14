@@ -2,8 +2,8 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { UrlService } from './url.service';
 import { CreateUrlDto, UrlResponseDto } from './dto';
 
-@Controller('url')
-export class UrlController {
+@Controller('urls')
+export class UrlsController {
   constructor(private readonly urlService: UrlService) {}
 
   @Post()
