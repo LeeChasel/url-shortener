@@ -38,9 +38,7 @@ export class UrlService {
         }),
         this.cacheUrl(shortCode, originalUrl, expiryDate),
       ]);
-      this.logger.log(
-        `Created short code: ${shortCode} for original URL: ${originalUrl}`,
-      );
+      this.logger.log(`Created short code: ${shortCode} for ${originalUrl}`);
 
       return url.shortCode;
     } catch (error) {
