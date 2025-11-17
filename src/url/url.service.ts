@@ -11,6 +11,7 @@ import { nanoid } from 'nanoid';
 import { addHours } from 'date-fns';
 import { Prisma } from 'generated/prisma';
 import { UrlResponseDto } from './dto';
+import { RESERVED_SHORT_CODES } from 'src/libs/modules/config/constants';
 
 @Injectable()
 export class UrlService {
@@ -21,6 +22,19 @@ export class UrlService {
   ) {}
   private readonly logger = new Logger(UrlService.name);
   private readonly DEFAULT_EXPIRY_HOURS = 24;
+  private readonly SHORT_CODE_LENGTH = 6;
+
+  isReservedShortCode(shortCode: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return RESERVED_SHORT_CODES.includes(shortCode.toLowerCase() as any);
+  }
+
+  isValidShortCode(shortCode: string): boolean {
+    const SHORT_CODE_REGEX = new RegExp(
+      `^[A-Za-z0-9_-]{${this.SHORT_CODE_LENGTH}}$`,
+    );
+    return SHORT_CODE_REGEX.test(shortCode);
+  }
 
   async createShortUrl(
     originalUrl: string,
@@ -73,7 +87,11 @@ export class UrlService {
     // Prevent shortCode collisions by checking existing codes
     const RETRY_LIMIT = 5;
     for (let i = 0; i < RETRY_LIMIT; i++) {
-      const shortCode = nanoid(6);
+      const shortCode = nanoid(this.SHORT_CODE_LENGTH);
+      if (this.isReservedShortCode(shortCode)) {
+        continue;
+      }
+
       const exists = await this.prisma.url.findUnique({
         where: { shortCode: shortCode },
       });
@@ -89,12 +107,16 @@ export class UrlService {
     );
   }
 
+  private getCacheKey(shortCode: string): string {
+    return `url:${shortCode}`;
+  }
+
   private async cacheUrl(
     shortCode: string,
     originalUrl: string,
     expiresAt: Date,
   ) {
-    const cacheKey = `url:${shortCode}`;
+    const cacheKey = this.getCacheKey(shortCode);
     const ttlMilliseconds = Math.floor(expiresAt.getTime() - Date.now());
     if (ttlMilliseconds <= 0) {
       return; // Do not cache expired URLs
@@ -109,5 +131,29 @@ export class UrlService {
 
   private generateShortUrl(shortCode: string): string {
     return `${this.config.get('BASE_URL')}/${shortCode}`;
+  }
+
+  async findByShortCode(shortCode: string): Promise<string | null> {
+    const cacheKey = this.getCacheKey(shortCode);
+    const cachedUrl = await this.cacheManager.get<string>(cacheKey);
+
+    if (cachedUrl) {
+      this.logger.debug(`Cache hit for shortCode: ${shortCode}`);
+      return cachedUrl;
+    }
+
+    this.logger.debug(`Cache miss for ${shortCode}, querying database`);
+    const url = await this.prisma.url.findUnique({
+      where: { shortCode: shortCode, deleted: false },
+    });
+
+    if (!url || url.expiresAt < new Date()) {
+      return null;
+    }
+
+    // Fire and forget caching, no need to await
+    void this.cacheUrl(shortCode, url.originalUrl, url.expiresAt);
+
+    return url.originalUrl;
   }
 }
