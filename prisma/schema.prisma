@@ -9,12 +9,12 @@ datasource db {
 }
 
 model Url {
-  id          Int       @id @default(autoincrement())
-  shortCode   String    @unique // auto generate unique index
+  id          Int      @id @default(autoincrement())
+  shortCode   String   @unique // auto generate unique index
   originalUrl String
-  expiresAt   DateTime?
-  clickCount  Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deleted     Boolean   @default(false)
+  expiresAt   DateTime
+  clickCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deleted     Boolean  @default(false)
 }
