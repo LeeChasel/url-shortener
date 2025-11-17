@@ -24,6 +24,10 @@ export class UrlService {
   private readonly DEFAULT_EXPIRY_HOURS = 24;
   private readonly SHORT_CODE_LENGTH = 6;
 
+  // Negative cache settings
+  private readonly NEGATIVE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly NEGATIVE_CACHE_VALUE = '__NOT_FOUND__';
+
   isReservedShortCode(shortCode: string): boolean {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return RESERVED_SHORT_CODES.includes(shortCode.toLowerCase() as any);
@@ -129,6 +133,24 @@ export class UrlService {
     }
   }
 
+  private async cacheNotFound(shortCode: string) {
+    const cacheKey = this.getCacheKey(shortCode);
+
+    try {
+      await this.cacheManager.set(
+        cacheKey,
+        this.NEGATIVE_CACHE_VALUE,
+        this.NEGATIVE_CACHE_TTL_MS,
+      );
+      this.logger.debug(`Cached negative result for shortCode: ${shortCode}`);
+    } catch (error) {
+      this.logger.warn(
+        { error, shortCode },
+        'Failed to write negative cache for URL',
+      );
+    }
+  }
+
   private generateShortUrl(shortCode: string): string {
     return `${this.config.get('BASE_URL')}/${shortCode}`;
   }
@@ -138,6 +160,12 @@ export class UrlService {
     const cachedUrl = await this.cacheManager.get<string>(cacheKey);
 
     if (cachedUrl) {
+      // Handle negative cache hit, prevent unnecessary DB query
+      if (cachedUrl === this.NEGATIVE_CACHE_VALUE) {
+        this.logger.debug(`Negative cache hit for shortCode: ${shortCode}`);
+        return null;
+      }
+
       this.logger.debug(`Cache hit for shortCode: ${shortCode}`);
       return cachedUrl;
     }
@@ -147,7 +175,14 @@ export class UrlService {
       where: { shortCode: shortCode, deleted: false },
     });
 
-    if (!url || url.expiresAt < new Date()) {
+    if (!url) {
+      void this.cacheNotFound(shortCode);
+      return null;
+    }
+
+    // Negative cache for expired URLs
+    if (url.expiresAt < new Date()) {
+      void this.cacheNotFound(shortCode);
       return null;
     }
 
