@@ -2,8 +2,8 @@
 
 ## TODO
 
-- [ ] url shortener module
-- [ ] short url redirect module
+- [x] url shortener module
+- [x] short url redirect module
 - [ ] og-scraper
 
 ## Project setup
