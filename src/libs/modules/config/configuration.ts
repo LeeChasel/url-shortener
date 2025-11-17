@@ -14,6 +14,10 @@ const configSchema = z.object({
     .string()
     .min(1, 'REDIS_URL is required')
     .default(`redis://localhost:${DEFAULT_REDIS_PORT}`),
+  ENABLE_SCHEDULER: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((val) => val === 'true'),
 });
 
 export type ConfigSchema = z.infer<typeof configSchema>;

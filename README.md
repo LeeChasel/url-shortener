@@ -18,6 +18,7 @@ BASE_URL=
 DATABASE_URL=
 REDIS_URL=
 NODE_ENV=
+ENABLE_SCHEDULER=
 ```
 
 2. Install dependencies (this will also generate the Prisma Client):

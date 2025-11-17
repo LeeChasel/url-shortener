@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CacheModule, ConfigModule, PrismaModule, LoggerModule } from './libs';
 import { UrlModule } from './url';
 import { RedirectModule } from './redirect';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RedirectModule } from './redirect';
     // features
     UrlModule,
 
+    SchedulerModule,
     // place at the end
     RedirectModule,
   ],
