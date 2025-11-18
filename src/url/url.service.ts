@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService, PrismaService } from 'src/libs';
 import { nanoid } from 'nanoid';
-import { addHours } from 'date-fns';
+import { addHours, addMilliseconds } from 'date-fns';
 import { Prisma } from 'generated/prisma';
 import { UrlResponseDto } from './dto';
 import { RESERVED_SHORT_CODES } from 'src/libs/modules/config/constants';
@@ -22,10 +22,11 @@ export class UrlService {
   ) {}
   private readonly logger = new Logger(UrlService.name);
   private readonly DEFAULT_EXPIRY_HOURS = 24;
+  private readonly POSITIVE_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
   private readonly SHORT_CODE_LENGTH = 6;
 
   // Negative cache settings
-  private readonly NEGATIVE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly NEGATIVE_CACHE_TTL_MS = 15 * 1000; // 15 seconds
   private readonly NEGATIVE_CACHE_VALUE = '__NOT_FOUND__';
 
   isReservedShortCode(shortCode: string): boolean {
@@ -46,6 +47,10 @@ export class UrlService {
   ): Promise<UrlResponseDto> {
     const shortCode = await this.generateUniqueShortCode();
     const expiryDate = addHours(new Date(), expiryInHours);
+    const cacheExpiryDate = addMilliseconds(
+      new Date(),
+      this.POSITIVE_CACHE_TTL_MS,
+    );
 
     try {
       const [url] = await Promise.all([
@@ -56,7 +61,7 @@ export class UrlService {
             expiresAt: expiryDate,
           },
         }),
-        this.cacheUrl(shortCode, originalUrl, expiryDate),
+        this.cacheUrl(shortCode, originalUrl, cacheExpiryDate),
       ]);
       this.logger.log(`Created short code: ${shortCode} for ${originalUrl}`);
 
@@ -64,7 +69,7 @@ export class UrlService {
         shortCode: url.shortCode,
         shortUrl: this.generateShortUrl(url.shortCode),
         originalUrl: url.originalUrl,
-        expiresAt: url.expiresAt!,
+        expiresAt: url.expiresAt,
         createdAt: url.createdAt,
         updatedAt: url.updatedAt,
       });
