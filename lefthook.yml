@@ -9,3 +9,10 @@ pre-commit:
       glob: "*.{ts,prisma,json,md}"
       run: pnpm prettier --write {staged_files}
       stage_fixed: true
+    test-related:
+      glob: "*.ts"
+      run: pnpm jest --findRelatedTests {staged_files} --passWithNoTests
+pre-push:
+  commands:
+    test:
+      run: pnpm jest --bail --passWithNoTests
