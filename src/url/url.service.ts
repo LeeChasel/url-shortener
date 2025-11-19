@@ -128,6 +128,11 @@ export class UrlService {
     const cacheKey = this.getCacheKey(shortCode);
     const ttlMilliseconds = Math.floor(expiresAt.getTime() - Date.now());
     if (ttlMilliseconds <= 0) {
+      // Should not happen
+      this.logger.warn(
+        { shortCode, expiresAt, ttl: ttlMilliseconds },
+        'Skipped caching Url with non-positive TTL',
+      );
       return; // Do not cache expired URLs
     }
 
