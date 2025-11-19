@@ -26,11 +26,10 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Install dependencies and generate prisma client with postinstall script
+        env:
+          DATABASE_URL: http://example.com # Dummy URL to satisfy prisma client generation
         run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
 
       - name: Run lint
         run: pnpm eslint "{src,test}/**/*.ts"
