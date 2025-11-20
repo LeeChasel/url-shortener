@@ -2,10 +2,14 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Prisma, type Url } from 'generated/prisma';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { nanoid } from 'nanoid';
 import { ConfigService, PrismaService } from 'src/libs';
-import { mockLogger, restoreLogger } from 'src/libs/test-helpers';
+import {
+  mockLogger,
+  mockPrismaService,
+  type MockPrismaService,
+  restoreLogger,
+} from 'src/libs/test-helpers';
 import { UrlService } from './url.service';
 
 jest.mock('nanoid', () => ({
@@ -21,7 +25,7 @@ const NEGATIVE_CACHE_TTL = 15000;
 
 describe('UrlService', () => {
   let service: UrlService;
-  let prismaService: DeepMockProxy<PrismaService>;
+  let prismaService: MockPrismaService;
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
@@ -59,7 +63,7 @@ describe('UrlService', () => {
         UrlService,
         {
           provide: PrismaService,
-          useValue: mockDeep<PrismaService>(),
+          useValue: mockPrismaService,
         },
         {
           provide: ConfigService,

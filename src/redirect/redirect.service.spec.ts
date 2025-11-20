@@ -1,13 +1,17 @@
 import { Test } from '@nestjs/testing';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { PrismaService } from 'src/libs';
-import { mockLogger, restoreLogger } from 'src/libs/test-helpers';
+import {
+  mockLogger,
+  mockPrismaService,
+  type MockPrismaService,
+  restoreLogger,
+} from 'src/libs/test-helpers';
 import { UrlService } from 'src/url';
 import { RedirectService } from './redirect.service';
 
 describe('RedirectService', () => {
   let service: RedirectService;
-  let prismaService: DeepMockProxy<PrismaService>;
+  let prismaService: MockPrismaService;
 
   const mockUrlService = {
     findByShortCode: jest.fn(),
@@ -22,7 +26,7 @@ describe('RedirectService', () => {
         RedirectService,
         {
           provide: PrismaService,
-          useValue: mockDeep<PrismaService>(),
+          useValue: mockPrismaService,
         },
         {
           provide: UrlService,

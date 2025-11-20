@@ -1,12 +1,16 @@
 import { Test } from '@nestjs/testing';
 import { UrlCleanupService } from './url-cleanup.service';
 import { PrismaService } from 'src/libs';
-import { mockLogger, restoreLogger } from 'src/libs/test-helpers';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import {
+  mockLogger,
+  mockPrismaService,
+  type MockPrismaService,
+  restoreLogger,
+} from 'src/libs/test-helpers';
 
 describe('UrlCleanupService', () => {
   let service: UrlCleanupService;
-  let prismaService: DeepMockProxy<PrismaService>;
+  let prismaService: MockPrismaService;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -14,7 +18,7 @@ describe('UrlCleanupService', () => {
         UrlCleanupService,
         {
           provide: PrismaService,
-          useValue: mockDeep<PrismaService>(),
+          useValue: mockPrismaService,
         },
       ],
     }).compile();
