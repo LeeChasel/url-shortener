@@ -2,13 +2,12 @@ import { Test } from '@nestjs/testing';
 import { UrlsController } from './urls.controller';
 import { UrlService } from './url.service';
 import { CreateUrlDto, UrlResponseDto } from './dto';
+import { createMockUrlService } from 'src/libs/test-helpers';
 
 describe('UrlsController', () => {
   let controller: UrlsController;
 
-  const mockUrlService = {
-    createShortUrl: jest.fn(),
-  };
+  const mockUrlService = createMockUrlService();
 
   const mockResponse: UrlResponseDto = {
     shortCode: 'abc123',

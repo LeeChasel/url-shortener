@@ -2,8 +2,8 @@ import { Test } from '@nestjs/testing';
 import { UrlCleanupService } from './url-cleanup.service';
 import { PrismaService } from 'src/libs';
 import {
+  createMockPrismaService,
   mockLogger,
-  mockPrismaService,
   type MockPrismaService,
   restoreLogger,
 } from 'src/libs/test-helpers';
@@ -18,7 +18,7 @@ describe('UrlCleanupService', () => {
         UrlCleanupService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: createMockPrismaService(),
         },
       ],
     }).compile();

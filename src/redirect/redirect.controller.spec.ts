@@ -1,24 +1,21 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { Response } from 'express';
 import { RedirectController } from './redirect.controller';
 import { RedirectService } from './redirect.service';
 import { UrlService } from 'src/url';
-import { mock } from 'jest-mock-extended';
+import {
+  createMockRedirectService,
+  createMockResponse,
+  createMockUrlService,
+  MockResponse,
+} from 'src/libs/test-helpers';
 
 describe('RedirectController', () => {
   let controller: RedirectController;
 
-  const mockUrlService = {
-    isValidShortCode: jest.fn(),
-    isReservedShortCode: jest.fn(),
-  };
-
-  const mockRedirectService = {
-    processRedirect: jest.fn(),
-  };
-
-  let mockResponse: jest.Mocked<Response>;
+  const mockUrlService = createMockUrlService();
+  const mockRedirectService = createMockRedirectService();
+  let mockResponse: MockResponse;
 
   const VALID_SHORT_CODE = 'abc123';
   const INVALID_SHORT_CODE = 'abc';
@@ -42,7 +39,7 @@ describe('RedirectController', () => {
     }).compile();
 
     controller = module.get(RedirectController);
-    mockResponse = mock<Response>();
+    mockResponse = createMockResponse();
   });
 
   afterEach(() => {

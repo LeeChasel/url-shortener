@@ -1,8 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from 'src/libs';
 import {
+  createMockPrismaService,
+  createMockUrlService,
   mockLogger,
-  mockPrismaService,
   type MockPrismaService,
   restoreLogger,
 } from 'src/libs/test-helpers';
@@ -13,9 +14,7 @@ describe('RedirectService', () => {
   let service: RedirectService;
   let prismaService: MockPrismaService;
 
-  const mockUrlService = {
-    findByShortCode: jest.fn(),
-  };
+  const mockUrlService = createMockUrlService();
 
   const SHORT_CODE = 'abc123';
   const ORIGINAL_URL = 'https://example.com';
@@ -26,7 +25,7 @@ describe('RedirectService', () => {
         RedirectService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: createMockPrismaService(),
         },
         {
           provide: UrlService,

@@ -35,7 +35,7 @@ jobs:
         run: pnpm eslint "{src,test}/**/*.ts"
 
       - name: Run format check
-        run: pnpm prettier --check "src/**/*.ts"
+        run: pnpm prettier --check "src/**/*.ts" "test/**/*.ts"
 
       - name: Run unit tests
         run: pnpm jest --ci --color --coverage --maxWorkers=2

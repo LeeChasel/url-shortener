@@ -5,8 +5,10 @@ import { Prisma, type Url } from 'generated/prisma';
 import { nanoid } from 'nanoid';
 import { ConfigService, PrismaService } from 'src/libs';
 import {
+  createMockCacheManager,
+  createMockConfigService,
+  createMockPrismaService,
   mockLogger,
-  mockPrismaService,
   type MockPrismaService,
   restoreLogger,
 } from 'src/libs/test-helpers';
@@ -27,20 +29,8 @@ describe('UrlService', () => {
   let service: UrlService;
   let prismaService: MockPrismaService;
 
-  const mockConfigService = {
-    get: jest.fn((key: string) => {
-      const config: Record<string, string> = {
-        BASE_URL: 'http://localhost:3000',
-      };
-
-      return config[key];
-    }),
-  };
-
-  const mockCacheManager = {
-    get: jest.fn(),
-    set: jest.fn(),
-  };
+  const mockConfigService = createMockConfigService();
+  const mockCacheManager = createMockCacheManager();
 
   const createMockUrl = (overrides?: Partial<Url>): Url => ({
     id: 1,
@@ -63,7 +53,7 @@ describe('UrlService', () => {
         UrlService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: createMockPrismaService(),
         },
         {
           provide: ConfigService,

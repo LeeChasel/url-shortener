@@ -1,34 +1,19 @@
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { PrismaModule, PrismaService } from 'src/libs';
-import {
-  mockPrismaService,
-  type MockPrismaService,
-} from 'src/libs/test-helpers';
+import { createMockUrlService } from 'src/libs/test-helpers';
 import { RedirectModule } from 'src/redirect';
 import { UrlService } from 'src/url';
 import request from 'supertest';
+import { createE2EModule } from './helpers';
 
 describe('Redirect', () => {
   let app: INestApplication;
-  let prismaService: MockPrismaService;
-  const mockUrlService = {
-    isValidShortCode: jest.fn(),
-    isReservedShortCode: jest.fn(),
-    findByShortCode: jest.fn(),
-  };
+  const mockUrlService = createMockUrlService();
 
   beforeAll(async () => {
-    prismaService = mockPrismaService;
-
-    const module = await Test.createTestingModule({
-      imports: [RedirectModule, PrismaModule],
-    })
-      .overrideProvider(PrismaService)
-      .useValue(prismaService)
-      .overrideProvider(UrlService)
-      .useValue(mockUrlService)
-      .compile();
+    const { module } = await createE2EModule({
+      imports: [RedirectModule],
+      providers: [{ provide: UrlService, useValue: mockUrlService }],
+    });
 
     app = module.createNestApplication();
     await app.init();
