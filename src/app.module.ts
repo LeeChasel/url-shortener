@@ -1,5 +1,11 @@
 import { Module } from '@nestjs/common';
-import { CacheModule, ConfigModule, PrismaModule, LoggerModule } from './libs';
+import {
+  CacheModule,
+  ConfigModule,
+  PrismaModule,
+  LoggerModule,
+  QueueModule,
+} from './libs';
 import { UrlModule } from './url';
 import { RedirectModule } from './redirect';
 import { SchedulerModule } from './scheduler/scheduler.module';
@@ -11,6 +17,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     PrismaModule,
     CacheModule,
     LoggerModule,
+    QueueModule,
 
     // features
     UrlModule,
