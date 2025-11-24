@@ -1,18 +1,36 @@
 import { INestApplication } from '@nestjs/common';
-import { createMockUrlService } from 'src/libs/test-helpers';
+import {
+  createMockUrlQueueProducer,
+  createMockUrlService,
+  type MockUrlQueueProducer,
+  type MockUrlService,
+} from 'src/libs/test-helpers';
 import { RedirectModule } from 'src/redirect';
-import { UrlService } from 'src/url';
+import { UrlQueueProducer, UrlService } from 'src/url';
 import request from 'supertest';
 import { createE2EModule } from './helpers';
 
 describe('Redirect', () => {
   let app: INestApplication;
-  const mockUrlService = createMockUrlService();
+  let mockUrlService: MockUrlService;
+  let mockUrlQueueProducer: MockUrlQueueProducer;
 
   beforeAll(async () => {
+    mockUrlService = createMockUrlService();
+    mockUrlQueueProducer = createMockUrlQueueProducer();
+
+    // Setup default mock implementation for queue producer
+    mockUrlQueueProducer.add.mockResolvedValue({} as any);
+
     const { module } = await createE2EModule({
       imports: [RedirectModule],
-      providers: [{ provide: UrlService, useValue: mockUrlService }],
+      providers: [
+        { provide: UrlService, useValue: mockUrlService },
+        {
+          provide: UrlQueueProducer,
+          useValue: mockUrlQueueProducer,
+        },
+      ],
     });
 
     app = module.createNestApplication();
@@ -47,6 +65,10 @@ describe('Redirect', () => {
           shortCode,
         );
         expect(mockUrlService.findByShortCode).toHaveBeenCalledWith(shortCode);
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
 
       it('should set no-cache headers to prevent caching', async () => {
@@ -66,6 +88,10 @@ describe('Redirect', () => {
         );
         expect(response.headers['pragma']).toBe('no-cache');
         expect(response.headers['expires']).toBe('0');
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
 
       it('should handle short codes with allowed special characters', async () => {
@@ -80,6 +106,11 @@ describe('Redirect', () => {
           .get(`/${shortCode}`)
           .expect(307)
           .expect('Location', originalUrl);
+
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
     });
 
@@ -92,6 +123,7 @@ describe('Redirect', () => {
 
         expect(mockUrlService.isValidShortCode).toHaveBeenCalledWith(shortCode);
         expect(mockUrlService.findByShortCode).not.toHaveBeenCalled();
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
 
       it('should return 404 for short codes that are too long', async () => {
@@ -101,6 +133,7 @@ describe('Redirect', () => {
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
 
         expect(mockUrlService.isValidShortCode).toHaveBeenCalledWith(shortCode);
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
 
       it('should return 404 for short codes with invalid characters', async () => {
@@ -108,6 +141,8 @@ describe('Redirect', () => {
         mockUrlService.isValidShortCode.mockReturnValue(false);
 
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
+
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
 
       it('should return 404 for empty short code', async () => {
@@ -115,6 +150,8 @@ describe('Redirect', () => {
         mockUrlService.isValidShortCode.mockReturnValue(false);
 
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
+
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
     });
 
@@ -131,6 +168,7 @@ describe('Redirect', () => {
           shortCode,
         );
         expect(mockUrlService.findByShortCode).not.toHaveBeenCalled();
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
 
       it('should return 404 for reserved short code "HEALTH" (case insensitive)', async () => {
@@ -139,6 +177,8 @@ describe('Redirect', () => {
         mockUrlService.isReservedShortCode.mockReturnValue(true);
 
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
+
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
     });
 
@@ -152,6 +192,7 @@ describe('Redirect', () => {
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
 
         expect(mockUrlService.findByShortCode).toHaveBeenCalledWith(shortCode);
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
 
       it('should return 404 for expired URLs', async () => {
@@ -161,6 +202,8 @@ describe('Redirect', () => {
         mockUrlService.findByShortCode.mockResolvedValue(null);
 
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
+
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
 
       it('should return 404 for deleted URLs', async () => {
@@ -170,6 +213,8 @@ describe('Redirect', () => {
         mockUrlService.findByShortCode.mockResolvedValue(null);
 
         await request(app.getHttpServer()).get(`/${shortCode}`).expect(404);
+
+        expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
       });
     });
 
@@ -186,6 +231,11 @@ describe('Redirect', () => {
           .get(`/${shortCode}`)
           .expect(307)
           .expect('Location', originalUrl);
+
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
 
       it('should handle URLs with hash fragments', async () => {
@@ -200,6 +250,11 @@ describe('Redirect', () => {
           .get(`/${shortCode}`)
           .expect(307)
           .expect('Location', originalUrl);
+
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
 
       it('should handle very long original URLs', async () => {
@@ -214,6 +269,11 @@ describe('Redirect', () => {
           .get(`/${shortCode}`)
           .expect(307)
           .expect('Location', originalUrl);
+
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
 
       it('should handle international URLs (URL encoded in headers)', async () => {
@@ -230,6 +290,10 @@ describe('Redirect', () => {
 
         // HTTP headers automatically encode international characters
         expect(response.headers.location).toBe(encodeURI(originalUrl));
+        expect(mockUrlQueueProducer.add).toHaveBeenCalledWith(
+          'url:redirected',
+          { shortCode },
+        );
       });
     });
   });

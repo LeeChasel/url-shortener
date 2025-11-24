@@ -12,6 +12,7 @@ import { addHours, addMilliseconds } from 'date-fns';
 import { Prisma } from 'generated/prisma';
 import { UrlResponseDto } from './dto';
 import { RESERVED_SHORT_CODES } from 'src/libs/modules/config/constants';
+import { UrlJobData } from './types/jobs.type';
 
 @Injectable()
 export class UrlService {
@@ -200,5 +201,20 @@ export class UrlService {
     void this.cacheUrl(shortCode, url.originalUrl, url.expiresAt);
 
     return url.originalUrl;
+  }
+
+  async redirectedStatistics(
+    data: UrlJobData<'url:redirected'>,
+  ): Promise<void> {
+    const { shortCode } = data;
+
+    await this.prisma.url.update({
+      where: { shortCode: shortCode },
+      data: {
+        clickCount: {
+          increment: 1,
+        },
+      },
+    });
   }
 }

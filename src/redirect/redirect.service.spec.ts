@@ -1,20 +1,18 @@
 import { Test } from '@nestjs/testing';
-import { PrismaService } from 'src/libs';
 import {
-  createMockPrismaService,
   createMockUrlService,
+  createMockUrlQueueProducer,
   mockLogger,
-  type MockPrismaService,
   restoreLogger,
 } from 'src/libs/test-helpers';
-import { UrlService } from 'src/url';
+import { UrlService, UrlQueueProducer } from 'src/url';
 import { RedirectService } from './redirect.service';
 
 describe('RedirectService', () => {
   let service: RedirectService;
-  let prismaService: MockPrismaService;
 
   const mockUrlService = createMockUrlService();
+  const mockUrlQueueProducer = createMockUrlQueueProducer();
 
   const SHORT_CODE = 'abc123';
   const ORIGINAL_URL = 'https://example.com';
@@ -24,18 +22,17 @@ describe('RedirectService', () => {
       providers: [
         RedirectService,
         {
-          provide: PrismaService,
-          useValue: createMockPrismaService(),
-        },
-        {
           provide: UrlService,
           useValue: mockUrlService,
+        },
+        {
+          provide: UrlQueueProducer,
+          useValue: mockUrlQueueProducer,
         },
       ],
     }).compile();
 
     service = module.get(RedirectService);
-    prismaService = module.get(PrismaService);
 
     mockLogger();
   });
@@ -46,21 +43,16 @@ describe('RedirectService', () => {
   });
 
   describe('processRedirect', () => {
-    it('should return original URL and trigger analytics tracking when URL exists', async () => {
+    it('should return original URL and queue analytics job when URL exists', async () => {
       mockUrlService.findByShortCode.mockResolvedValue(ORIGINAL_URL);
-      prismaService.url.update.mockResolvedValue({} as any);
+      mockUrlQueueProducer.add.mockResolvedValue({} as any);
 
       const result = await service.processRedirect(SHORT_CODE);
 
       expect(result).toBe(ORIGINAL_URL);
       expect(mockUrlService.findByShortCode).toHaveBeenCalledWith(SHORT_CODE);
-
-      // wait fire-and-forget analytics execution
-      await new Promise(process.nextTick);
-
-      expect(prismaService.url.update).toHaveBeenCalledWith({
-        where: { shortCode: SHORT_CODE },
-        data: { clickCount: { increment: 1 } },
+      expect(mockUrlQueueProducer.add).toHaveBeenCalledWith('url:redirected', {
+        shortCode: SHORT_CODE,
       });
     });
 
@@ -71,20 +63,17 @@ describe('RedirectService', () => {
 
       expect(result).toBeNull();
       expect(mockUrlService.findByShortCode).toHaveBeenCalledWith(SHORT_CODE);
-      expect(prismaService.url.update).not.toHaveBeenCalled();
+      expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
     });
 
-    it('should still return URL even when analytics tracking fails', async () => {
+    it('should still return URL even when queuing analytics job fails', async () => {
       mockUrlService.findByShortCode.mockResolvedValue(ORIGINAL_URL);
-      prismaService.url.update.mockRejectedValue(new Error('Database error'));
+      mockUrlQueueProducer.add.mockRejectedValue(new Error('Queue error'));
 
       const result = await service.processRedirect(SHORT_CODE);
 
       expect(result).toBe(ORIGINAL_URL);
-
-      await new Promise(process.nextTick);
-
-      expect(prismaService.url.update).toHaveBeenCalled();
+      expect(mockUrlQueueProducer.add).toHaveBeenCalled();
     });
 
     it('should propagate URL service errors', async () => {
@@ -94,7 +83,7 @@ describe('RedirectService', () => {
       await expect(service.processRedirect(SHORT_CODE)).rejects.toThrow(
         serviceError,
       );
-      expect(prismaService.url.update).not.toHaveBeenCalled();
+      expect(mockUrlQueueProducer.add).not.toHaveBeenCalled();
     });
   });
 });

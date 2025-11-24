@@ -4,8 +4,13 @@ import {
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
-import { createMockUrlService } from 'src/libs/test-helpers';
-import { UrlModule, UrlService } from 'src/url';
+import {
+  createMockUrlQueueProducer,
+  createMockUrlService,
+  type MockUrlQueueProducer,
+  type MockUrlService,
+} from 'src/libs/test-helpers';
+import { UrlModule, UrlQueueProducer, UrlService } from 'src/url';
 import request from 'supertest';
 import { createE2EModule } from './helpers';
 import { UrlResponseDto } from 'src/url/dto';
@@ -21,7 +26,8 @@ const BASE_URL = 'http://localhost:3000';
 
 describe('URLs', () => {
   let app: INestApplication;
-  const mockUrlService = createMockUrlService();
+  let mockUrlService: MockUrlService;
+  let mockUrlQueueProducer: MockUrlQueueProducer;
 
   const createMockResponse = (
     overrides?: Partial<UrlResponseDto>,
@@ -40,9 +46,18 @@ describe('URLs', () => {
     jest.useFakeTimers();
     jest.setSystemTime(NOW);
 
+    mockUrlService = createMockUrlService();
+    mockUrlQueueProducer = createMockUrlQueueProducer();
+
     const { module } = await createE2EModule({
       imports: [UrlModule],
-      providers: [{ provide: UrlService, useValue: mockUrlService }],
+      providers: [
+        { provide: UrlService, useValue: mockUrlService },
+        {
+          provide: UrlQueueProducer,
+          useValue: mockUrlQueueProducer,
+        },
+      ],
     });
 
     app = module.createNestApplication();
