@@ -6,3 +6,4 @@ export * from './mock-http-response';
 export * from './mock-url-service';
 export * from './mock-redirect-service';
 export * from './mock-url-queue';
+export * from './mock-metadata-queue';

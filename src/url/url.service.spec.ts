@@ -8,10 +8,12 @@ import {
   createMockCacheManager,
   createMockConfigService,
   createMockPrismaService,
+  createMockMetadataQueueProducer,
   mockLogger,
   type MockPrismaService,
   restoreLogger,
 } from 'src/libs/test-helpers';
+import { MetadataQueueProducer } from 'src/metadata/queue';
 import { UrlService } from './url.service';
 
 jest.mock('nanoid', () => ({
@@ -31,6 +33,7 @@ describe('UrlService', () => {
 
   const mockConfigService = createMockConfigService();
   const mockCacheManager = createMockCacheManager();
+  const mockMetadataQueueProducer = createMockMetadataQueueProducer();
 
   const createMockUrl = (overrides?: Partial<Url>): Url => ({
     id: 1,
@@ -63,6 +66,10 @@ describe('UrlService', () => {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
         },
+        {
+          provide: MetadataQueueProducer,
+          useValue: mockMetadataQueueProducer,
+        },
       ],
     }).compile();
 
@@ -72,6 +79,7 @@ describe('UrlService', () => {
     mockCacheManager.get.mockResolvedValue(null);
     mockCacheManager.set.mockResolvedValue(undefined);
     prismaService.url.findUnique.mockResolvedValue(null);
+    mockMetadataQueueProducer.add.mockResolvedValue({} as any);
 
     mockLogger();
   });
@@ -247,6 +255,30 @@ describe('UrlService', () => {
         shortCode: 'abc123',
         originalUrl: 'https://example.com',
       });
+    });
+
+    it('should queue metadata fetch job after URL creation', async () => {
+      await service.createShortUrl('https://example.com');
+
+      expect(mockMetadataQueueProducer.add).toHaveBeenCalledWith(
+        'metadata:fetch',
+        {
+          urlId: mockUrl.id,
+          url: mockUrl.originalUrl,
+        },
+      );
+    });
+
+    it('should not fail URL creation if metadata queue job fails', async () => {
+      mockMetadataQueueProducer.add.mockRejectedValue(new Error('Queue error'));
+
+      const result = await service.createShortUrl('https://example.com');
+
+      expect(result).toMatchObject({
+        shortCode: 'abc123',
+        originalUrl: 'https://example.com',
+      });
+      expect(mockMetadataQueueProducer.add).toHaveBeenCalled();
     });
   });
 
