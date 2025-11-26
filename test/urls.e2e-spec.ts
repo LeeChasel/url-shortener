@@ -7,10 +7,15 @@ import {
 import {
   createMockUrlQueueProducer,
   createMockUrlService,
+  createMockMetadataQueueProducer,
+  createMockMetadataService,
   type MockUrlQueueProducer,
   type MockUrlService,
+  type MockMetadataQueueProducer,
+  type MockMetadataService,
 } from 'src/libs/test-helpers';
 import { UrlModule, UrlQueueProducer, UrlService } from 'src/url';
+import { MetadataQueueProducer, MetadataService } from 'src/metadata';
 import request from 'supertest';
 import { createE2EModule } from './helpers';
 import { UrlResponseDto } from 'src/url/dto';
@@ -28,6 +33,8 @@ describe('URLs', () => {
   let app: INestApplication;
   let mockUrlService: MockUrlService;
   let mockUrlQueueProducer: MockUrlQueueProducer;
+  let mockMetadataQueueProducer: MockMetadataQueueProducer;
+  let mockMetadataService: MockMetadataService;
 
   const createMockResponse = (
     overrides?: Partial<UrlResponseDto>,
@@ -48,6 +55,11 @@ describe('URLs', () => {
 
     mockUrlService = createMockUrlService();
     mockUrlQueueProducer = createMockUrlQueueProducer();
+    mockMetadataQueueProducer = createMockMetadataQueueProducer();
+    mockMetadataService = createMockMetadataService();
+
+    // Setup default mock implementations
+    mockMetadataQueueProducer.add.mockResolvedValue({} as any);
 
     const { module } = await createE2EModule({
       imports: [UrlModule],
@@ -56,6 +68,14 @@ describe('URLs', () => {
         {
           provide: UrlQueueProducer,
           useValue: mockUrlQueueProducer,
+        },
+        {
+          provide: MetadataQueueProducer,
+          useValue: mockMetadataQueueProducer,
+        },
+        {
+          provide: MetadataService,
+          useValue: mockMetadataService,
         },
       ],
     });

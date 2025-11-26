@@ -2,11 +2,16 @@ import { INestApplication } from '@nestjs/common';
 import {
   createMockUrlQueueProducer,
   createMockUrlService,
+  createMockMetadataQueueProducer,
+  createMockMetadataService,
   type MockUrlQueueProducer,
   type MockUrlService,
+  type MockMetadataQueueProducer,
+  type MockMetadataService,
 } from 'src/libs/test-helpers';
 import { RedirectModule } from 'src/redirect';
 import { UrlQueueProducer, UrlService } from 'src/url';
+import { MetadataQueueProducer, MetadataService } from 'src/metadata';
 import request from 'supertest';
 import { createE2EModule } from './helpers';
 
@@ -14,13 +19,18 @@ describe('Redirect', () => {
   let app: INestApplication;
   let mockUrlService: MockUrlService;
   let mockUrlQueueProducer: MockUrlQueueProducer;
+  let mockMetadataQueueProducer: MockMetadataQueueProducer;
+  let mockMetadataService: MockMetadataService;
 
   beforeAll(async () => {
     mockUrlService = createMockUrlService();
     mockUrlQueueProducer = createMockUrlQueueProducer();
+    mockMetadataQueueProducer = createMockMetadataQueueProducer();
+    mockMetadataService = createMockMetadataService();
 
-    // Setup default mock implementation for queue producer
+    // Setup default mock implementations
     mockUrlQueueProducer.add.mockResolvedValue({} as any);
+    mockMetadataQueueProducer.add.mockResolvedValue({} as any);
 
     const { module } = await createE2EModule({
       imports: [RedirectModule],
@@ -29,6 +39,14 @@ describe('Redirect', () => {
         {
           provide: UrlQueueProducer,
           useValue: mockUrlQueueProducer,
+        },
+        {
+          provide: MetadataQueueProducer,
+          useValue: mockMetadataQueueProducer,
+        },
+        {
+          provide: MetadataService,
+          useValue: mockMetadataService,
         },
       ],
     });
