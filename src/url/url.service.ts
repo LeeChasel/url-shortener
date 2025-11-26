@@ -13,6 +13,7 @@ import { Prisma } from 'generated/prisma';
 import { UrlResponseDto } from './dto';
 import { RESERVED_SHORT_CODES } from 'src/libs/modules/config/constants';
 import { UrlJobData } from './types/jobs.type';
+import { MetadataQueueProducer } from 'src/metadata/queue';
 
 @Injectable()
 export class UrlService {
@@ -20,6 +21,7 @@ export class UrlService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly metadataQueueProducer: MetadataQueueProducer,
   ) {}
   private readonly logger = new Logger(UrlService.name);
   private readonly DEFAULT_EXPIRY_HOURS = 24;
@@ -65,6 +67,19 @@ export class UrlService {
         this.cacheUrl(shortCode, originalUrl, cacheExpiryDate),
       ]);
       this.logger.log(`Created short code: ${shortCode} for ${originalUrl}`);
+
+      // Queue metadata fetch (fire-and-forget)
+      await this.metadataQueueProducer
+        .add('metadata:fetch', {
+          urlId: url.id,
+          url: url.originalUrl,
+        })
+        .catch((error) => {
+          this.logger.error(
+            { error: error as Error, urlId: url.id },
+            'Failed to queue metadata fetch',
+          );
+        });
 
       return new UrlResponseDto({
         shortCode: url.shortCode,

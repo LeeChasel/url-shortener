@@ -9,12 +9,45 @@ datasource db {
 }
 
 model Url {
-  id          Int      @id @default(autoincrement())
-  shortCode   String   @unique // auto generate unique index
+  id          Int       @id @default(autoincrement())
+  shortCode   String    @unique // auto generate unique index
   originalUrl String
   expiresAt   DateTime
-  clickCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deleted     Boolean  @default(false)
+  clickCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deleted     Boolean   @default(false)
+  metadata    MetaData?
+}
+
+model MetaData {
+  id    Int @id @default(autoincrement())
+  urlId Int @unique
+  url   Url @relation(fields: [urlId], references: [id], onDelete: Cascade)
+
+  // OpenGraph Metadata Fields
+  title       String? @db.VarChar(255)
+  description String? @db.VarChar(1000)
+  image       String? @db.VarChar(2048)
+  siteName    String? @db.VarChar(255)
+  type        String? @db.VarChar(50)
+  locale      String? @db.VarChar(10)
+
+  // Fetch Status Tracking
+  fetchStatus   FetchStatus @default(PENDING)
+  failureReason String?     @db.VarChar(500)
+  fetchedAt     DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fetchStatus])
+}
+
+enum FetchStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  NO_METADATA
 }

@@ -9,6 +9,7 @@ import {
 import { UrlModule } from './url';
 import { RedirectModule } from './redirect';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { MetadataModule } from './metadata';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 
     // features
     UrlModule,
+    MetadataModule,
 
     SchedulerModule,
     // place at the end

@@ -5,12 +5,14 @@ import { UrlCleanupService } from './url-cleanup.service';
 import { BullModule } from '@nestjs/bullmq';
 import { UrlQueueProcessor } from './queue/url.processor';
 import { UrlQueueProducer } from './queue';
+import { MetadataModule } from 'src/metadata/metadata.module';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'url',
     }),
+    MetadataModule,
   ],
   controllers: [UrlsController],
   providers: [
