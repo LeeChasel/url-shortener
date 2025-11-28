@@ -122,7 +122,7 @@ describe('MetadataService', () => {
       });
       expect(cacheManager.set).toHaveBeenCalledWith(
         'metadata:1',
-        JSON.stringify(metadata),
+        metadata,
         POSITIVE_CACHE_TTL_MS,
       );
     });
@@ -253,7 +253,7 @@ describe('MetadataService', () => {
         title: 'Cached Title',
         description: 'Cached Description',
       };
-      cacheManager.get.mockResolvedValue(JSON.stringify(metadata));
+      cacheManager.get.mockResolvedValue(metadata);
 
       const result = await service.getMetadata(urlId);
 
@@ -305,14 +305,14 @@ describe('MetadataService', () => {
       });
       expect(cacheManager.set).toHaveBeenCalledWith(
         'metadata:1',
-        JSON.stringify({
+        {
           title: 'DB Title',
           description: 'DB Description',
           image: 'https://example.com/image.jpg',
           siteName: 'Example',
           type: 'website',
           locale: 'en_US',
-        }),
+        },
         POSITIVE_CACHE_TTL_MS,
       );
     });

@@ -72,7 +72,9 @@ export class MetadataService {
 
   async getMetadata(urlId: number): Promise<OpenGraphMetadata | null> {
     const cacheKey = this.getCacheKey(urlId);
-    const cached = await this.cacheManager.get<string>(cacheKey);
+    const cached = await this.cacheManager.get<
+      OpenGraphMetadata | typeof this.NEGATIVE_CACHE_VALUE
+    >(cacheKey);
 
     // Check cache
     if (cached) {
@@ -81,7 +83,7 @@ export class MetadataService {
         return null;
       }
       this.logger.debug(`Cache hit for metadata of URL id ${urlId}`);
-      return JSON.parse(cached) as OpenGraphMetadata;
+      return cached;
     }
 
     this.logger.debug(`Cache miss for URL id ${urlId}, querying database`);
@@ -153,7 +155,7 @@ export class MetadataService {
     try {
       await this.cacheManager.set(
         this.getCacheKey(urlId),
-        JSON.stringify(metadata),
+        metadata,
         this.POSITIVE_CACHE_TTL_MS,
       );
     } catch (error) {
