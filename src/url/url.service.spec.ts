@@ -241,7 +241,7 @@ describe('UrlService', () => {
 
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'url:abc123',
-        'https://example.com',
+        { url: 'https://example.com', id: 1 },
         expect.any(Number),
       );
     });
@@ -286,11 +286,14 @@ describe('UrlService', () => {
     const mockUrl = createMockUrl();
 
     it('should return cached URL if available', async () => {
-      mockCacheManager.get.mockResolvedValue('https://cached.com');
+      mockCacheManager.get.mockResolvedValue({
+        url: 'https://cached.com',
+        id: 1,
+      });
 
       const result = await service.findByShortCode('abc123');
 
-      expect(result).toBe('https://cached.com');
+      expect(result).toEqual({ url: 'https://cached.com', id: 1 });
       expect(mockCacheManager.get).toHaveBeenCalledWith('url:abc123');
       expect(prismaService.url.findUnique).not.toHaveBeenCalled();
     });
@@ -309,13 +312,13 @@ describe('UrlService', () => {
 
       const result = await service.findByShortCode('abc123');
 
-      expect(result).toBe('https://example.com');
+      expect(result).toEqual({ id: 1, url: 'https://example.com' });
       expect(prismaService.url.findUnique).toHaveBeenCalledWith({
         where: { shortCode: 'abc123', deleted: false },
       });
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'url:abc123',
-        'https://example.com',
+        { url: 'https://example.com', id: 1 },
         expect.any(Number),
       );
     });
@@ -354,7 +357,7 @@ describe('UrlService', () => {
 
       const result = await service.findByShortCode('abc123');
 
-      expect(result).toBe('https://example.com');
+      expect(result).toEqual({ id: 1, url: 'https://example.com' });
     });
 
     it('should calculate cache TTL correctly', async () => {
@@ -369,7 +372,7 @@ describe('UrlService', () => {
 
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'url:abc123',
-        'https://example.com',
+        { url: 'https://example.com', id: 1 },
         60 * 60 * 1000,
       );
     });

@@ -9,3 +9,4 @@ export * from './mock-url-queue';
 export * from './mock-metadata-queue';
 export * from './mock-metadata-service';
 export * from './mock-metadata-fetcher';
+export * from './mock-metadata-data';

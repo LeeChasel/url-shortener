@@ -31,6 +31,7 @@ describe('Redirect', () => {
     // Setup default mock implementations
     mockUrlQueueProducer.add.mockResolvedValue({} as any);
     mockMetadataQueueProducer.add.mockResolvedValue({} as any);
+    mockMetadataService.getMetadata.mockResolvedValue(null);
 
     const { module } = await createE2EModule({
       imports: [RedirectModule],
@@ -71,7 +72,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 1,
+          url: originalUrl,
+        });
 
         const response = await request(app.getHttpServer())
           .get(`/${shortCode}`)
@@ -95,7 +99,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 2,
+          url: originalUrl,
+        });
 
         const response = await request(app.getHttpServer())
           .get(`/${shortCode}`)
@@ -118,7 +125,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 3,
+          url: originalUrl,
+        });
 
         await request(app.getHttpServer())
           .get(`/${shortCode}`)
@@ -243,7 +253,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 4,
+          url: originalUrl,
+        });
 
         await request(app.getHttpServer())
           .get(`/${shortCode}`)
@@ -262,7 +275,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 5,
+          url: originalUrl,
+        });
 
         await request(app.getHttpServer())
           .get(`/${shortCode}`)
@@ -281,7 +297,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 6,
+          url: originalUrl,
+        });
 
         await request(app.getHttpServer())
           .get(`/${shortCode}`)
@@ -300,7 +319,10 @@ describe('Redirect', () => {
 
         mockUrlService.isValidShortCode.mockReturnValue(true);
         mockUrlService.isReservedShortCode.mockReturnValue(false);
-        mockUrlService.findByShortCode.mockResolvedValue(originalUrl);
+        mockUrlService.findByShortCode.mockResolvedValue({
+          id: 7,
+          url: originalUrl,
+        });
 
         const response = await request(app.getHttpServer())
           .get(`/${shortCode}`)

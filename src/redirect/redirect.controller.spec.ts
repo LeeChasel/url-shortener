@@ -7,6 +7,7 @@ import {
   createMockRedirectService,
   createMockResponse,
   createMockUrlService,
+  createMockOpenGraphMetadata,
   MockResponse,
 } from 'src/libs/test-helpers';
 
@@ -50,11 +51,16 @@ describe('RedirectController', () => {
     beforeEach(() => {
       mockUrlService.isValidShortCode.mockReturnValue(true);
       mockUrlService.isReservedShortCode.mockReturnValue(false);
-      mockRedirectService.processRedirect.mockResolvedValue(ORIGINAL_URL);
+      mockRedirectService.processRedirect.mockResolvedValue({
+        url: ORIGINAL_URL,
+        metadata: null,
+      });
     });
 
-    it('should redirect to the original URL for a valid short code', async () => {
-      await controller.redirect(VALID_SHORT_CODE, mockResponse);
+    it('should redirect to the original URL for a valid short code (non-bot user agent)', async () => {
+      const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)';
+
+      await controller.redirect(VALID_SHORT_CODE, userAgent, mockResponse);
 
       expect(mockUrlService.isValidShortCode).toHaveBeenCalledWith(
         VALID_SHORT_CODE,
@@ -83,13 +89,75 @@ describe('RedirectController', () => {
         HttpStatus.TEMPORARY_REDIRECT,
         ORIGINAL_URL,
       );
+      expect(mockResponse.render).not.toHaveBeenCalled();
+    });
+
+    it('should render OG preview page for bot user agents', async () => {
+      const botUserAgent = 'facebookexternalhit/1.1';
+      const mockMetadata = createMockOpenGraphMetadata();
+
+      mockRedirectService.processRedirect.mockResolvedValue({
+        url: ORIGINAL_URL,
+        metadata: mockMetadata,
+      });
+
+      await controller.redirect(VALID_SHORT_CODE, botUserAgent, mockResponse);
+
+      expect(mockRedirectService.processRedirect).toHaveBeenCalledWith(
+        VALID_SHORT_CODE,
+      );
+
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Cache-Control',
+        'public, max-age=3600',
+      );
+      expect(mockResponse.render).toHaveBeenCalledWith('og-preview', {
+        url: ORIGINAL_URL,
+        title: mockMetadata.title,
+        describe: mockMetadata.description,
+        image: mockMetadata.image,
+        siteName: mockMetadata.siteName,
+        type: mockMetadata.type,
+        locale: mockMetadata.locale,
+      });
+      expect(mockResponse.redirect).not.toHaveBeenCalled();
+    });
+
+    it('should render OG preview with default values when metadata is null', async () => {
+      const botUserAgent = 'Twitterbot/1.0';
+      mockRedirectService.processRedirect.mockResolvedValue({
+        url: ORIGINAL_URL,
+        metadata: null,
+      });
+
+      await controller.redirect(VALID_SHORT_CODE, botUserAgent, mockResponse);
+
+      expect(mockResponse.render).toHaveBeenCalledWith('og-preview', {
+        url: ORIGINAL_URL,
+        title: ORIGINAL_URL,
+        describe: '',
+        image: undefined,
+        siteName: undefined,
+        type: 'website',
+        locale: undefined,
+      });
+    });
+
+    it('should handle undefined user agent as non-bot', async () => {
+      await controller.redirect(VALID_SHORT_CODE, undefined, mockResponse);
+
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        HttpStatus.TEMPORARY_REDIRECT,
+        ORIGINAL_URL,
+      );
+      expect(mockResponse.render).not.toHaveBeenCalled();
     });
 
     it('should throw NOT_FOUND exception for invalid short code', async () => {
       mockUrlService.isValidShortCode.mockReturnValue(false);
 
       await expect(
-        controller.redirect(INVALID_SHORT_CODE, mockResponse),
+        controller.redirect(INVALID_SHORT_CODE, undefined, mockResponse),
       ).rejects.toMatchObject({
         status: HttpStatus.NOT_FOUND,
         response: {
@@ -106,7 +174,7 @@ describe('RedirectController', () => {
       mockUrlService.isReservedShortCode.mockReturnValue(true);
 
       await expect(
-        controller.redirect(RESERVED_SHORT_CODE, mockResponse),
+        controller.redirect(RESERVED_SHORT_CODE, undefined, mockResponse),
       ).rejects.toMatchObject({
         status: HttpStatus.NOT_FOUND,
         response: {
@@ -123,7 +191,7 @@ describe('RedirectController', () => {
       mockRedirectService.processRedirect.mockResolvedValue(null);
 
       await expect(
-        controller.redirect(VALID_SHORT_CODE, mockResponse),
+        controller.redirect(VALID_SHORT_CODE, undefined, mockResponse),
       ).rejects.toMatchObject({
         status: HttpStatus.NOT_FOUND,
         response: {
@@ -134,6 +202,7 @@ describe('RedirectController', () => {
       });
 
       expect(mockResponse.redirect).not.toHaveBeenCalled();
+      expect(mockResponse.render).not.toHaveBeenCalled();
     });
 
     it('should propagate service errors', async () => {
@@ -141,7 +210,7 @@ describe('RedirectController', () => {
       mockRedirectService.processRedirect.mockRejectedValue(error);
 
       await expect(
-        controller.redirect(VALID_SHORT_CODE, mockResponse),
+        controller.redirect(VALID_SHORT_CODE, undefined, mockResponse),
       ).rejects.toThrow(error);
     });
   });

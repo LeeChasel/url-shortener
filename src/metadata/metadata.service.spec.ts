@@ -7,6 +7,7 @@ import {
   createMockPrismaService,
   mockLogger,
   createMockMetadataFetcher,
+  createMockOpenGraphMetadata,
   type MockCacheManager,
   type MockPrismaService,
   type MockMetadataFetcher,
@@ -75,14 +76,7 @@ describe('MetadataService', () => {
     };
 
     it('should successfully fetch and store metadata', async () => {
-      const metadata = {
-        title: 'Example Title',
-        description: 'Example Description',
-        image: 'https://example.com/image.jpg',
-        siteName: 'Example Site',
-        type: 'website',
-        locale: 'en_US',
-      };
+      const metadata = createMockOpenGraphMetadata();
 
       mockMetadataFetcher.fetchMetadata.mockResolvedValue({
         status: FetchStatus.SUCCESS,
@@ -128,10 +122,12 @@ describe('MetadataService', () => {
     });
 
     it('should handle metadata with partial fields', async () => {
-      const metadata = {
-        title: 'Example Title',
-        description: 'Example Description',
-      };
+      const metadata = createMockOpenGraphMetadata({
+        image: undefined,
+        siteName: undefined,
+        type: undefined,
+        locale: undefined,
+      });
 
       mockMetadataFetcher.fetchMetadata.mockResolvedValue({
         status: FetchStatus.SUCCESS,
@@ -228,10 +224,12 @@ describe('MetadataService', () => {
     });
 
     it('should not fail if caching fails', async () => {
-      const metadata = {
-        title: 'Example Title',
-        description: 'Example Description',
-      };
+      const metadata = createMockOpenGraphMetadata({
+        image: undefined,
+        siteName: undefined,
+        type: undefined,
+        locale: undefined,
+      });
 
       mockMetadataFetcher.fetchMetadata.mockResolvedValue({
         status: FetchStatus.SUCCESS,
@@ -249,10 +247,14 @@ describe('MetadataService', () => {
     const urlId = 1;
 
     it('should return cached metadata when available', async () => {
-      const metadata = {
+      const metadata = createMockOpenGraphMetadata({
         title: 'Cached Title',
         description: 'Cached Description',
-      };
+        image: undefined,
+        siteName: undefined,
+        type: undefined,
+        locale: undefined,
+      });
       cacheManager.get.mockResolvedValue(metadata);
 
       const result = await service.getMetadata(urlId);
