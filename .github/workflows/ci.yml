@@ -23,8 +23,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies and generate prisma client with postinstall script
         env:
@@ -38,7 +38,7 @@ jobs:
         run: pnpm prettier --check "src/**/*.ts" "test/**/*.ts"
 
       - name: Run unit tests
-        run: pnpm jest --ci --color --coverage --maxWorkers=2
+        run: pnpm jest --ci --color --maxWorkers=2
 
       - name: Run e2e tests
         run: pnpm jest --config ./test/jest-e2e.json --runInBand --detectOpenHandles

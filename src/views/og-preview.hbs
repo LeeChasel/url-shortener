@@ -1,0 +1,169 @@
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>{{title}}</title>
+
+    <!-- Open Graph / Facebook -->
+    <meta property='og:type' content='{{type}}' />
+    <meta property='og:url' content='{{url}}' />
+    <meta property='og:title' content='{{title}}' />
+    <meta property='og:description' content='{{description}}' />
+    {{#if image}}
+      <meta property='og:image' content='{{image}}' />
+    {{/if}}
+    {{#if siteName}}
+      <meta property='og:site_name' content='{{siteName}}' />
+    {{/if}}
+    {{#if locale}}
+      <meta property='og:locale' content='{{locale}}' />
+    {{/if}}
+
+    <!-- Twitter -->
+    <meta name='twitter:card' content='summary_large_image' />
+    <meta name='twitter:url' content='{{url}}' />
+    <meta name='twitter:title' content='{{title}}' />
+    <meta name='twitter:description' content='{{description}}' />
+    {{#if image}}
+      <meta name='twitter:image' content='{{image}}' />
+    {{/if}}
+
+    <!-- Auto-redirect for non-bot clients (fallback) -->
+    <meta http-equiv='refresh' content='0; url={{url}}' />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .image-container {
+        width: 100%;
+        height: 300px;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .image-container .placeholder {
+        color: #999;
+        font-size: 48px;
+      }
+
+      .content {
+        padding: 32px;
+      }
+
+      .title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+        line-height: 1.4;
+      }
+
+      .description {
+        font-size: 16px;
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 24px;
+      }
+
+      .url {
+        font-size: 14px;
+        color: #667eea;
+        word-break: break-all;
+        margin-bottom: 24px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+      }
+
+      .redirect-btn {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 32px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .redirect-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .footer {
+        text-align: center;
+        color: #999;
+        font-size: 12px;
+        padding: 16px 32px 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      {{#if image}}
+        <div class='image-container'>
+          <img src='{{image}}' alt='{{title}}' />
+        </div>
+      {{else}}
+        <div class='image-container'>
+          <div class='placeholder'>🔗</div>
+        </div>
+      {{/if}}
+
+      <div class='content'>
+        <h1 class='title'>{{title}}</h1>
+        {{#if description}}
+          <p class='description'>{{description}}</p>
+        {{/if}}
+        <div class='url'>{{url}}</div>
+        <a href='{{url}}' class='redirect-btn'>Visit Link</a>
+      </div>
+
+      <div class='footer'>
+        You will be redirected automatically
+      </div>
+    </div>
+
+    <script>
+      // Fallback redirect for clients that don't respect meta refresh
+      setTimeout(function() { window.location.href = '{{url}}'; }, 100);
+    </script>
+  </body>
+</html>

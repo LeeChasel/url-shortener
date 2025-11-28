@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Headers,
   HttpException,
   HttpStatus,
   Param,
@@ -11,6 +12,7 @@ import {
 import { RedirectService } from './redirect.service';
 import { UrlService } from 'src/url';
 import type { Response } from 'express';
+import { BotDetector } from './utils/bot-detector.util';
 
 @Controller()
 export class RedirectController {
@@ -35,6 +37,7 @@ export class RedirectController {
   @Version(VERSION_NEUTRAL) // Make this endpoint version-neutral
   async redirect(
     @Param('shortCode') shortCode: string,
+    @Headers('user-agent') userAgent: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
     if (
@@ -44,15 +47,32 @@ export class RedirectController {
       throw this.createShortCodeNotFoundException(shortCode);
     }
 
-    const url = await this.redirectService.processRedirect(shortCode);
-    if (!url) {
+    const urlWithMetadata =
+      await this.redirectService.processRedirect(shortCode);
+    if (!urlWithMetadata) {
       throw this.createShortCodeNotFoundException(shortCode);
+    }
+
+    if (BotDetector.isBot(userAgent)) {
+      const { url, metadata } = urlWithMetadata;
+      // Set cache headers to allow bot crawlers to cache the preview page
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+
+      return res.render('og-preview', {
+        url: url,
+        title: metadata?.title || url,
+        describe: metadata?.description || '',
+        image: metadata?.image,
+        siteName: metadata?.siteName,
+        type: metadata?.type || 'website',
+        locale: metadata?.locale,
+      });
     }
 
     // Ensure every request need to pass through server-side redirect, preventing client-side caching
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    return res.redirect(HttpStatus.TEMPORARY_REDIRECT, url);
+    return res.redirect(HttpStatus.TEMPORARY_REDIRECT, urlWithMetadata.url);
   }
 }

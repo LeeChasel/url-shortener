@@ -15,6 +15,11 @@ import { RESERVED_SHORT_CODES } from 'src/libs/modules/config/constants';
 import { UrlJobData } from './types/jobs.type';
 import { MetadataQueueProducer } from 'src/metadata/queue';
 
+type UrlCache = {
+  url: string;
+  id: number;
+};
+
 @Injectable()
 export class UrlService {
   constructor(
@@ -44,6 +49,22 @@ export class UrlService {
     return SHORT_CODE_REGEX.test(shortCode);
   }
 
+  private setUrlCache(
+    key: string,
+    value: UrlCache | typeof this.NEGATIVE_CACHE_VALUE,
+    ttlMilliseconds: number,
+  ): Promise<UrlCache | typeof this.NEGATIVE_CACHE_VALUE> {
+    return this.cacheManager.set(key, value, ttlMilliseconds);
+  }
+
+  private getUrlCache(
+    key: string,
+  ): Promise<UrlCache | typeof this.NEGATIVE_CACHE_VALUE | undefined> {
+    return this.cacheManager.get<UrlCache | typeof this.NEGATIVE_CACHE_VALUE>(
+      key,
+    );
+  }
+
   async createShortUrl(
     originalUrl: string,
     expiryInHours = this.DEFAULT_EXPIRY_HOURS,
@@ -56,16 +77,20 @@ export class UrlService {
     );
 
     try {
-      const [url] = await Promise.all([
-        this.prisma.url.create({
-          data: {
-            shortCode: shortCode,
-            originalUrl: originalUrl,
-            expiresAt: expiryDate,
-          },
-        }),
-        this.cacheUrl(shortCode, originalUrl, cacheExpiryDate),
-      ]);
+      const url = await this.prisma.url.create({
+        data: {
+          shortCode: shortCode,
+          originalUrl: originalUrl,
+          expiresAt: expiryDate,
+        },
+      });
+
+      void this.cacheUrl(
+        shortCode,
+        { url: originalUrl, id: url.id },
+        cacheExpiryDate,
+      );
+
       this.logger.log(`Created short code: ${shortCode} for ${originalUrl}`);
 
       // Queue metadata fetch (fire-and-forget)
@@ -138,7 +163,7 @@ export class UrlService {
 
   private async cacheUrl(
     shortCode: string,
-    originalUrl: string,
+    cacheData: UrlCache,
     expiresAt: Date,
   ) {
     const cacheKey = this.getCacheKey(shortCode);
@@ -153,7 +178,7 @@ export class UrlService {
     }
 
     try {
-      await this.cacheManager.set(cacheKey, originalUrl, ttlMilliseconds);
+      await this.setUrlCache(cacheKey, cacheData, ttlMilliseconds);
     } catch (error) {
       this.logger.warn({ error, shortCode }, 'Failed to write URL to cache');
     }
@@ -163,7 +188,7 @@ export class UrlService {
     const cacheKey = this.getCacheKey(shortCode);
 
     try {
-      await this.cacheManager.set(
+      await this.setUrlCache(
         cacheKey,
         this.NEGATIVE_CACHE_VALUE,
         this.NEGATIVE_CACHE_TTL_MS,
@@ -181,9 +206,11 @@ export class UrlService {
     return `${this.config.get('BASE_URL')}/${shortCode}`;
   }
 
-  async findByShortCode(shortCode: string): Promise<string | null> {
+  async findByShortCode(
+    shortCode: string,
+  ): Promise<{ id: number; url: string } | null> {
     const cacheKey = this.getCacheKey(shortCode);
-    const cachedUrl = await this.cacheManager.get<string>(cacheKey);
+    const cachedUrl = await this.getUrlCache(cacheKey);
 
     if (cachedUrl) {
       // Handle negative cache hit, prevent unnecessary DB query
@@ -206,16 +233,18 @@ export class UrlService {
       return null;
     }
 
+    const { expiresAt, id, originalUrl } = url;
+
     // Negative cache for expired URLs
-    if (url.expiresAt < new Date()) {
+    if (expiresAt < new Date()) {
       void this.cacheNotFound(shortCode);
       return null;
     }
 
     // Fire and forget caching, no need to await
-    void this.cacheUrl(shortCode, url.originalUrl, url.expiresAt);
+    void this.cacheUrl(shortCode, { url: originalUrl, id: id }, expiresAt);
 
-    return url.originalUrl;
+    return { id: id, url: originalUrl };
   }
 
   async redirectedStatistics(
