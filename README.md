@@ -4,7 +4,7 @@
 
 - [x] url shortener module
 - [x] short url redirect module
-- [ ] og-scraper
+- [x] og-scraper
 
 ## Project setup
 

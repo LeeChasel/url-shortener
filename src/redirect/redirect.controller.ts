@@ -9,11 +9,13 @@ import {
   Version,
   VERSION_NEUTRAL,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { RedirectService } from './redirect.service';
 import { UrlService } from 'src/url';
 import type { Response } from 'express';
 import { BotDetector } from './utils/bot-detector.util';
 
+@ApiTags('redirect')
 @Controller()
 export class RedirectController {
   constructor(
@@ -35,6 +37,20 @@ export class RedirectController {
 
   @Get(':shortCode')
   @Version(VERSION_NEUTRAL) // Make this endpoint version-neutral
+  @ApiOperation({ summary: 'Redirect to the original URL' })
+  @ApiParam({
+    name: 'shortCode',
+    description: 'The short code of the URL',
+    example: 'abc123',
+  })
+  @ApiResponse({
+    status: 307,
+    description: 'Temporary redirect to the original URL.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Short code not found or invalid.',
+  })
   async redirect(
     @Param('shortCode') shortCode: string,
     @Headers('user-agent') userAgent: string | undefined,
